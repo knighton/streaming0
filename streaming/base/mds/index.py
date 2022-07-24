@@ -5,16 +5,16 @@ from typing import Any, Dict, List, Optional, Tuple
 from typing_extensions import Self
 
 
-from ..compression import compress, is_valid_compression
-from ..hashing import get_hash, is_valid_hash_algorithm
-from .encodings import decode, encode, get_fixed_encoded_size, is_valid_encoding
+from ..compression import compress, is_compression
+from ..hashing import get_hash, is_hash
+from .encodings import decode, encode, get_encoded_size, is_encoding
 
 
 def get_index_basename() -> str:
     """Get the canonical index file basename.
 
     Returns:
-        str; Index file basename.
+        str: Index file basename.
     """
     return 'index.json'
 
@@ -123,15 +123,16 @@ class MDSIndex(object):
         shards: Optional[List[MDSShard]] = None
     ) -> None:
         for encoding in fields.values():
-            assert is_valid_encoding(encoding)
+            assert is_encoding(encoding)
 
         compression = compression or None
-        assert is_valid_compression(compression)
+        if isinstance(compression, str):
+            assert is_compression(compression)
 
         hashes = hashes or []
         assert hashes == list(sorted(hashes))
         for algo in hashes:
-            assert is_valid_hash_algorithm(algo)
+            assert is_hash(algo)
 
         shards = shards or []
 
@@ -142,7 +143,7 @@ class MDSIndex(object):
         self.shards = shards
 
         self.field_names = sorted(fields)
-        self.field_sizes = [get_fixed_encoded_size(self.fields[key]) for key in self.field_names]
+        self.field_sizes = [get_encoded_size(self.fields[key]) for key in self.field_names]
 
     @classmethod
     def from_json(cls, obj: Dict[str, Any]) -> Self:
@@ -322,9 +323,9 @@ class MDSIndex(object):
         raw_basename, zip_basename = self._name_next_shard()
 
         raw_info = self._hash(data, raw_basename)
-        if zip_basename:
+        if self.compression:
             data = compress(self.compression, data)
-            zip_info = self._hash(data, zip_basename)
+            zip_info = self._hash(data, zip_basename)  # pyright: ignore
         else:
             zip_info = None
 

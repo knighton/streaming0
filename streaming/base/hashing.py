@@ -1,32 +1,61 @@
 import hashlib
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Set
 import xxhash
 
 
-def _get() -> Dict[str, Callable[[bytes], Any]]:
-    algo2hash = {}
+__all__ = ['get_hashes', 'is_hash', 'get_hash']
 
+
+def _collect() -> Dict[str, Callable[[bytes], Any]]:
+    """Get all supported hash algorithms.
+
+    Returns:
+        Dict[str, Callable[[bytes], Any]]: Mapping of name to hash.
+    """
+    hashes = {}
     for algo in hashlib.algorithms_available:
         if hasattr(hashlib, algo):
-            algo2hash[algo] = getattr(hashlib, algo)
-
+            hashes[algo] = getattr(hashlib, algo)
     for algo in xxhash.algorithms_available:  # pyright: ignore
-        algo2hash[algo] = getattr(xxhash, algo)
-
-    return algo2hash
-
-
-_algo2hash = _get()
+        assert algo not in hashes
+        hashes[algo] = getattr(xxhash, algo)
+    return hashes
 
 
-def get_hash_algorithms():
-    return sorted(_algo2hash)
+# Hash algorithms (name -> function).
+_hashes = _collect()
 
 
-def is_valid_hash_algorithm(algo):
-    return algo in _algo2hash
+def get_hashes() -> Set[str]:
+    """List supported hash algorithms.
+
+    Returns:
+        Set[str]: Hash algorithm names.
+    """
+    return set(_hashes)
 
 
-def get_hash(algo, data):
-    func = _algo2hash[algo]
+def is_hash(algo: str) -> bool:
+    """Get whether this is a supported hash algorithm.
+
+    Args:
+        algo (str): Hash algorithm.
+
+    Returns:
+        bool: Whether supported.
+    """
+    return algo in _hashes
+
+
+def get_hash(algo: str, data: bytes) -> str:
+    """Apply the hash algorithm to the data.
+
+    Args:
+        algo (str): Hash algorithm.
+        data (bytes): Data to hash.
+
+    Returns:
+        str: Hex digest.
+    """
+    func = _hashes[algo]
     return func(data).hexdigest()

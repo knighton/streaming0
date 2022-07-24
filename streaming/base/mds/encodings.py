@@ -3,11 +3,16 @@ import json
 import numpy as np
 from PIL import Image
 import pickle
-from typing import Any, Optional
+from typing import Any, Optional, Set
+
+
+__all__ = ['get_encodings', 'is_encoding', 'encode', 'decode', 'get_encoded_size']
 
 
 class Encoding(object):
     """Encodes and decodes between objects of a certain type and serialized bytes."""
+
+    size: Optional[int] = None  # Fixed size in bytes of encoded data (None if variable size).
     
     def encode(self, obj: Any) -> bytes:
         """Encode the given data from the original object to bytes.
@@ -31,17 +36,9 @@ class Encoding(object):
         """
         raise NotImplementedError
 
-    def get_size(self) -> Optional[int]:
-        """Get the fixed size of all encodings of this type, if there is one, else None.
-
-        Returns:
-            Optional[int]: Fixed size of encoded data.
-        """
-        return None
-
 
 class Bytes(Encoding):
-    """No-op encoding."""
+    """Store bytes (no-op encoding)."""
 
     def encode(self, obj: Any) -> bytes:
         return obj
@@ -51,7 +48,7 @@ class Bytes(Encoding):
 
 
 class Str(Encoding):
-    """Store as UTF-8."""
+    """Store UTF-8."""
 
     def encode(self, obj: str) -> bytes:
         return obj.encode('utf-8')
@@ -61,7 +58,9 @@ class Str(Encoding):
 
 
 class Int(Encoding):
-    """Store as int64."""
+    """Store int64."""
+
+    size = 8
 
     def encode(self, obj: int) -> bytes:
         return np.int64(obj).tobytes()
@@ -69,12 +68,12 @@ class Int(Encoding):
     def decode(self, data: bytes) -> int:
         return int(np.frombuffer(data, np.int64)[0])
 
-    def get_size(self) -> Optional[int]:
-        return 8
-
 
 class PIL(Encoding):
-    """Store PIL image raw."""
+    """Store PIL image raw.
+
+    Format: [width: 4] [height: 4] [mode size: 4] [mode] [raw image].
+    """
 
     def encode(self, obj: Image.Image) -> bytes:
         mode = obj.mode.encode('utf-8')
@@ -139,6 +138,7 @@ class JSON(Encoding):
         return json.loads(data.decode('utf-8'))
 
 
+# Encodings (name -> class).
 _encodings = {
     'bytes': Bytes,
     'str': Str,
@@ -151,18 +151,25 @@ _encodings = {
 }
 
 
-def decode(encoding: str, data: bytes) -> Any:
-    """Decode the given data from bytes to the original object.
+def get_encodings() -> Set[str]:
+    """List supported encodings.
+
+    Returns:
+        Set[str]: Encoding names.
+    """
+    return set(_encodings)
+
+
+def is_encoding(encoding: str) -> bool:
+    """Get whether the given encoding is supported.
 
     Args:
         encoding (str): Encoding.
-        data (bytes): Encoded data.
 
     Returns:
-        Any: Decoded object.
+        bool: Whether the encoding is valid.
     """
-    coder = _encodings[encoding]()
-    return coder.decode(data)
+    return encoding in _encodings
 
 
 def encode(encoding: str, obj: Any) -> bytes:
@@ -177,30 +184,32 @@ def encode(encoding: str, obj: Any) -> bytes:
     """
     if isinstance(obj, bytes):
         return obj
-    coder = _encodings[encoding]()
-    return coder.encode(obj)
+    cls = _encodings[encoding]
+    return cls().encode(obj)
 
 
-def get_fixed_encoded_size(encoding: str) -> Optional[int]:
-    """Get the fixed size of all encodings of this type, if there is one, else None.
+def decode(encoding: str, data: bytes) -> Any:
+    """Decode the given data from bytes to the original object.
+
+    Args:
+        encoding (str): Encoding.
+        data (bytes): Encoded data.
+
+    Returns:
+        Any: Decoded object.
+    """
+    cls = _encodings[encoding]()
+    return cls().decode(data)
+
+
+def get_encoded_size(encoding: str) -> Optional[int]:
+    """Get the fixed size of all encodings of this type, or None if variable size.
 
     Args:
         encoding (str): Encoding.
 
     Returns:
-        Optional[int]: Fixed size of encoded data.
+        Optional[int]: Size of encoded data.
     """
-    coder = _encodings[encoding]()
-    return coder.get_size()
-
-
-def is_valid_encoding(encoding: str) -> bool:
-    """Get whether this is a valid encoding.
-
-    Args:
-        encoding (str): Encoding.
-
-    Returns:
-        bool: Whether the encoding is valid.
-    """
-    return encoding in _encodings
+    cls = _encodings[encoding]()
+    return cls().size
