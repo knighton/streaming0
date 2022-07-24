@@ -194,7 +194,7 @@ def is_compression(algo: str) -> bool:
     Returns:
         bool: Whether supported.
     """
-    return algo is None or algo in _algorithms
+    return algo in _algorithms
 
 
 def compress(algo: str, data: bytes) -> bytes:
