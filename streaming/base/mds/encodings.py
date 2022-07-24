@@ -198,7 +198,7 @@ def decode(encoding: str, data: bytes) -> Any:
     Returns:
         Any: Decoded object.
     """
-    cls = _encodings[encoding]()
+    cls = _encodings[encoding]
     return cls().decode(data)
 
 
@@ -211,5 +211,5 @@ def get_encoded_size(encoding: str) -> Optional[int]:
     Returns:
         Optional[int]: Size of encoded data.
     """
-    cls = _encodings[encoding]()
+    cls = _encodings[encoding]
     return cls().size
