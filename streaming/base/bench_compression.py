@@ -16,7 +16,6 @@ def parse_args() -> Namespace:
     args.add_argument('--data', type=str, required=True)
     args.add_argument('--min_power', type=int, default=10)
     args.add_argument('--max_power', type=int, default=30)
-    args.add_argument('--min_time', type=float, default=1)
     args.add_argument('--max_time', type=float, default=10)
     return args.parse_args()
 
