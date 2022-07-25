@@ -6,7 +6,8 @@ from PIL import Image
 from tqdm import tqdm
 from typing import List, Optional, Set, Tuple
 
-from streaming.base.mds.writer import MDSCreator
+from ...base.mds.writer import MDSCreator
+from .base import get_list_arg
 
 
 def parse_args() -> Namespace:
@@ -17,9 +18,9 @@ def parse_args() -> Namespace:
     """
     args = ArgumentParser()
     args.add_argument('--in', type=str, default='/datasets/imagenet_files/')
-    args.add_argument('--out', type=str, default='/datasets/mds/imagenet3/')
+    args.add_argument('--out', type=str, default='/datasets/mds/imagenet/')
     args.add_argument('--splits', type=str, default='train,val')
-    args.add_argument('--compression', type=str, default='')  # zstd:7')
+    args.add_argument('--compression', type=str, default='')
     args.add_argument('--hashes', type=str, default='sha1,xxh64')
     args.add_argument('--limit', type=int, default=1 << 26)
     args.add_argument('--progbar', type=int, default=1)
@@ -27,18 +28,6 @@ def parse_args() -> Namespace:
     args.add_argument('--validate', type=int, default=1)
     args.add_argument('--extensions', type=str, default='jpeg')
     return args.parse_args()
-
-
-def get_list_arg(text: str) -> List[str]:
-    """Pass a list as a commandline flag.
-
-    Args:
-        text (str): Text to split.
-
-    Returns:
-        List[str]: Splits, if any.
-    """
-    return text.split(',') if text else []
 
 
 def check_extensions(filenames: List[str], extensions: Set[str]) -> None:
