@@ -14,7 +14,7 @@ def _collect() -> Dict[str, Callable[[bytes], Any]]:
     """
     hashes = {}
     for algo in hashlib.algorithms_available:
-        if hasattr(hashlib, algo):
+        if hasattr(hashlib, algo) and not algo.startswith('shake_'):
             hashes[algo] = getattr(hashlib, algo)
     for algo in xxhash.algorithms_available:  # pyright: ignore
         assert algo not in hashes
