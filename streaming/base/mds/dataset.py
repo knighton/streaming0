@@ -374,9 +374,10 @@ class MDSDataset(IterableDataset):
             info = self.index.shards[shard]
             raw_filename = os.path.join(self.local, self.split, info.raw.basename)
             if os.path.isfile(raw_filename):
-                data = open(raw_filename, 'rb').read()
-                for algo in self.shard_hashes:
-                    assert get_hash(algo, data) == info.raw.hashes[algo]
+                if self.shard_hashes:
+                    data = open(raw_filename, 'rb').read()
+                    for algo in self.shard_hashes:
+                        assert get_hash(algo, data) == info.raw.hashes[algo]
                 present_shards.append(shard)
             elif not info.zip:
                 missing_shards.append(shard)
@@ -453,7 +454,7 @@ class MDSDataset(IterableDataset):
                     wait = shard not in partition.shards_to_download
                     self._download_file(info.zip.basename, wait)
                 data = open(zip_filename, 'rb').read()
-                for algo in self.hashes:
+                for algo in self.shard_hashes:
                     assert get_hash(algo, data) == info.zip.hashes[algo]
                 data = decompress(self.index.compression, data)  # pyright: ignore
                 with open(raw_filename, 'wb') as out:
@@ -465,9 +466,10 @@ class MDSDataset(IterableDataset):
             if not os.path.isfile(raw_filename):
                 wait = shard not in partition.shards_to_download
                 self._download_file(info.raw.basename, wait)
-                data = open(raw_filename, 'rb').read()
-                for algo in self.hashes:
-                    assert get_hash(algo, data) == info.raw.hashes[algo]
+                if self.shard_hashes:
+                    data = open(raw_filename, 'rb').read()
+                    for algo in self.shard_hashes:
+                        assert get_hash(algo, data) == info.raw.hashes[algo]
         return shard
 
     def _download_shards_via_pool(self, shards: List[int], partition: Partition,

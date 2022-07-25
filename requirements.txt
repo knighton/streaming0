@@ -1,0 +1,5 @@
+Brotli==1.0.9
+snappy==3.0.3
+tqdm==4.64.0
+xxhash==3.0.0
+zstd==1.5.2.5
