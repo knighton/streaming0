@@ -11,8 +11,8 @@ from torchvision.transforms.functional import to_tensor
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 from ..compression import decompress
-from . import dist
-from .download import download_or_wait
+from .. import distributed as dist
+from ..download import download_or_wait
 from .index import get_index_basename, MDSIndex
 
 
