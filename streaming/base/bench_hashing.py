@@ -7,9 +7,13 @@ from .hashing import get_hash, get_hashes
 
 
 def parse_args() -> Namespace:
+    """Parse commandline arguments.
+
+    Args:
+        Namespace: Commandline arguments.
+    """
     args = ArgumentParser()
-    args.add_argument('--data', type=str,
-                      default='/home/frak/Downloads/yelp/yelp_academic_dataset_review.json')
+    args.add_argument('--data', type=str, required=True)
     args.add_argument('--min_power', type=int, default=10)
     args.add_argument('--max_power', type=int, default=30)
     args.add_argument('--min_time', type=float, default=1)
@@ -18,6 +22,16 @@ def parse_args() -> Namespace:
 
 
 def each_size(max_size: int, min_power: int, max_power: int) -> Iterator[int]:
+    """Get some even exponentially growing sizes of data to benchmark on.
+
+    Args:
+        max_size (int): Size of source data.
+        min_power (int): Minimum power of two size.
+        max_power (int): Maximum power of two size.
+
+    Returns:
+        Iterator[int]: Each size.
+    """
     for power in range(min_power, max_power + 1):
         for mul in [1, 1.5]:
             size = 1 << power
@@ -28,6 +42,11 @@ def each_size(max_size: int, min_power: int, max_power: int) -> Iterator[int]:
 
 
 def main(args: Namespace) -> None:
+    """Benchmark hash algorithms.
+
+    Args:
+        args (Namespace): Commandline flags.
+    """
     data = open(args.data, 'rb').read()
     for algo in sorted(get_hashes()):
         for size in each_size(len(data), args.min_power, args.max_power):
