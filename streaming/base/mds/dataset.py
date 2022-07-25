@@ -4,6 +4,7 @@ from multiprocessing import Pool
 import numpy as np
 import os
 from PIL import Image
+import shutil
 from threading import RLock, Thread
 from time import sleep
 from torch.utils.data import Dataset, get_worker_info, IterableDataset
@@ -339,6 +340,8 @@ class MDSDataset(IterableDataset):
                     data = decompress(self.index.compression, data)  # pyright: ignore
                     with open(raw_filename, 'wb') as out:
                         out.write(data)
+                    if not self.keep_zip:
+                        shutil.remove(zip_filename)
                     present_shards.append(shard)
                 else:
                     missing_shards.append(shard)
@@ -404,6 +407,8 @@ class MDSDataset(IterableDataset):
                 data = decompress(self.index.compression, data)  # pyright: ignore
                 with open(raw_filename, 'wb') as out:
                     out.write(data)
+                if not self.keep_zip:
+                    shutil.remove(zip_filename)
         else:
             raw_filename = os.path.join(self.local, self.split, info.raw.basename)
             if not os.path.isfile(raw_filename):
