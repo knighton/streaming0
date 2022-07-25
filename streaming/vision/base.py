@@ -1,6 +1,6 @@
 import os
 from torchvision.transforms.functional import to_tensor
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
 from ..base.mds.dataset import MDSDataset
 
@@ -35,10 +35,11 @@ class MDSVisionDataset(MDSDataset):
         keep_zip: bool = True,
         retry: int = 2,
         timeout: float = 60,
+        shard_hashes: Optional[List[str]] = None,
         batch_size: Optional[int] = None
     ) -> None:
         super().__init__(local, remote, split, shuffle, prefetch, keep_zip, retry, timeout,
-                         batch_size)
+                         shard_hashes, batch_size)
 
         has_transforms = transforms is not None
         has_separate_transform = transform is not None or target_transform is not None

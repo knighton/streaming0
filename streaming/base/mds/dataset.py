@@ -14,6 +14,7 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 from ..compression import decompress
 from .. import distributed as dist
 from ..download import download_or_wait
+from ..hashing import get_hash
 from .index import get_index_basename, MDSIndex
 
 
@@ -65,6 +66,8 @@ class MDSDataset(IterableDataset):
         retry (int, default: 2): Number of download re-attempts before giving up.
         timeout (float, default: 60): Number of seconds to wait for a shard to download before
             raising an exception.
+        shard_hashes (Optional[List[str]], default: None): List of hash or checksum algorithms to
+            use to validate shards.
         batch_size (Optional[int], default: None): Hint the batch_size that will be used on each
             device's DataLoader.
     """
@@ -79,10 +82,12 @@ class MDSDataset(IterableDataset):
         keep_zip: bool = None,
         retry: int = 2,
         timeout: float = 60,
+        shard_hashes: Optional[List[str]] = None,
         batch_size: Optional[int] = None
     ) -> None:
         split = split or ''
         keep_zip = (remote == local) if keep_zip is None else keep_zip
+        shard_hashes = shard_hashes or []
 
         self.local = local
         self.remote = remote
@@ -92,6 +97,7 @@ class MDSDataset(IterableDataset):
         self.keep_zip = keep_zip
         self.retry = retry
         self.timeout = timeout
+        self.shard_hashes = shard_hashes
         self.batch_size = batch_size
 
         basename = get_index_basename()
@@ -330,6 +336,9 @@ class MDSDataset(IterableDataset):
             info = self.index.shards[shard]
             raw_filename = os.path.join(self.local, self.split, info.raw.basename)
             if os.path.isfile(raw_filename):
+                data = open(raw_filename, 'rb').read()
+                for algo in self.shard_hashes:
+                    assert get_hash(algo, data) == info.raw.hashes[algo]
                 present_shards.append(shard)
             elif not info.zip:
                 missing_shards.append(shard)
@@ -337,6 +346,8 @@ class MDSDataset(IterableDataset):
                 zip_filename = os.path.join(self.local, self.split, info.zip.basename)
                 if os.path.isfile(zip_filename):
                     data = open(zip_filename, 'rb').read()
+                    for algo in self.shard_hashes:
+                        assert get_hash(algo, data) == info.zip.hashes[algo]
                     data = decompress(self.index.compression, data)  # pyright: ignore
                     with open(raw_filename, 'wb') as out:
                         out.write(data)
@@ -404,6 +415,8 @@ class MDSDataset(IterableDataset):
                     wait = shard not in partition.shards_to_download
                     self._download_file(info.zip.basename, wait)
                 data = open(zip_filename, 'rb').read()
+                for algo in self.hashes:
+                    assert get_hash(algo, data) == info.zip.hashes[algo]
                 data = decompress(self.index.compression, data)  # pyright: ignore
                 with open(raw_filename, 'wb') as out:
                     out.write(data)
@@ -414,6 +427,9 @@ class MDSDataset(IterableDataset):
             if not os.path.isfile(raw_filename):
                 wait = shard not in partition.shards_to_download
                 self._download_file(info.raw.basename, wait)
+                data = open(raw_filename, 'rb').read()
+                for algo in self.hashes:
+                    assert get_hash(algo, data) == info.raw.hashes[algo]
         return shard
 
     def _download_shards_via_pool(self, shards: List[int], partition: Partition,
