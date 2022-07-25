@@ -77,7 +77,7 @@ class Brotli(LevelledCompression):
         self.level = level
 
     def compress(self, data: bytes) -> bytes:
-        return brotli.compress(data, level=self.level)
+        return brotli.compress(data, quality=self.level)
 
     def decompress(self, data: bytes) -> bytes:
         return brotli.decompress(data)
