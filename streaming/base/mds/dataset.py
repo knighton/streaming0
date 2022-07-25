@@ -17,6 +17,7 @@ from .index import get_index_basename, MDSIndex
 
 
 class DownloadStatus(IntEnum):
+    """Download status."""
     NOT_STARTED = 1
     IN_PROGRESS = 2
     DONE = 3
@@ -33,6 +34,7 @@ class Partition(object):
         min_id (int): The lowest sample ID of this partition.
         max_id (int): The highest sample ID of this partition.
     """
+
     def __init__(
         self,
         shards: List[int],
@@ -47,19 +49,43 @@ class Partition(object):
 
 
 class MDSDataset(IterableDataset):
+    """A sharded, streamed, iterable dataset.
+
+    Args:
+        local (str): Local dataset directory where shards are cached by split.
+        remote (Optional[str], default: None): Download shards from this remote path or directory.
+            If None, this rank and workers' partition of the dataset must all exist locally.
+        split (Optional[str], default: None): Which dataset split to use, if any.
+        shuffle (bool, default: True): Whether to shuffle the samples while iterating.
+        prefetch (Optional[int], default: 100_000): Target number of samples remaining to prefetch
+            while iterating.
+        keep_zip (Optional[bool], default: None): Whether to keep or delete the compressed file when
+            decompressing downloaded shards. If set to None, keep iff remote == local.
+        retry (int, default: 2): Number of download re-attempts before giving up.
+        timeout (float, default: 60): Number of seconds to wait for a shard to download before
+            raising an exception.
+        batch_size (Optional[int], default: None): Hint the batch_size that will be used on each
+            device's DataLoader.
+    """
+
     def __init__(
         self,
-        remote: Optional[str],
         local: str,
-        shuffle: bool,
+        remote: Optional[str] = None,
+        split: Optional[str] = None,
+        shuffle: bool = True,
         prefetch: Optional[int] = 100_000,
-        keep_zip: bool = True,
+        keep_zip: bool = None,
         retry: int = 2,
         timeout: float = 60,
         batch_size: Optional[int] = None
     ) -> None:
-        self.remote = remote
+        split = split or ''
+        keep_zip = (remote == local) if keep_zip is None else keep_zip
+
         self.local = local
+        self.remote = remote
+        self.split = split
         self.shuffle = shuffle
         self.prefetch = prefetch
         self.keep_zip = keep_zip
@@ -67,7 +93,9 @@ class MDSDataset(IterableDataset):
         self.timeout = timeout
         self.batch_size = batch_size
 
-        filename = os.path.join(local, get_index_basename())
+        basename = get_index_basename()
+        wait = dist.get_local_rank() != 0
+        filename = self._download_file(basename, wait)
         self.index = MDSIndex.load(open(filename))
 
         self.samples_per_shard = np.zeros(len(self.index.shards), np.int64)
@@ -299,13 +327,13 @@ class MDSDataset(IterableDataset):
         missing_shards = []
         for shard in partition.shards:
             info = self.index.shards[shard]
-            raw_filename = os.path.join(self.local, info.raw.basename)
+            raw_filename = os.path.join(self.local, self.split, info.raw.basename)
             if os.path.isfile(raw_filename):
                 present_shards.append(shard)
             elif not info.zip:
                 missing_shards.append(shard)
             else:
-                zip_filename = os.path.join(self.local, info.zip.basename)
+                zip_filename = os.path.join(self.local, self.split, info.zip.basename)
                 if os.path.isfile(zip_filename):
                     data = open(zip_filename, 'rb').read()
                     data = decompress(self.index.compression, data)  # pyright: ignore
@@ -348,8 +376,8 @@ class MDSDataset(IterableDataset):
         if self.remote is None:
             remote = None
         else:
-            remote = os.path.join(self.remote, basename)
-        local = os.path.join(self.local, basename)
+            remote = os.path.join(self.remote, self.split, basename)
+        local = os.path.join(self.local, self.split, basename)
         download_or_wait(remote, local, wait, self.retry, self.timeout)
         return local
 
@@ -366,9 +394,9 @@ class MDSDataset(IterableDataset):
         assert shard in partition.shards
         info = self.index.shards[shard]
         if info.zip:
-            raw_filename = os.path.join(self.local, info.raw.basename)
+            raw_filename = os.path.join(self.local, self.split, info.raw.basename)
             if not os.path.isfile(raw_filename):
-                zip_filename = os.path.join(self.local, info.zip.basename)
+                zip_filename = os.path.join(self.local, self.split, info.zip.basename)
                 if not os.path.isfile(zip_filename):
                     wait = shard not in partition.shards_to_download
                     self._download_file(info.zip.basename, wait)
@@ -377,7 +405,7 @@ class MDSDataset(IterableDataset):
                 with open(raw_filename, 'wb') as out:
                     out.write(data)
         else:
-            raw_filename = os.path.join(self.local, info.raw.basename)
+            raw_filename = os.path.join(self.local, self.split, info.raw.basename)
             if not os.path.isfile(raw_filename):
                 wait = shard not in partition.shards_to_download
                 self._download_file(info.raw.basename, wait)
@@ -570,7 +598,7 @@ class MDSDataset(IterableDataset):
         Returns:
             Dict[str, Any]: Sample data.
         """
-        filename = os.path.join(self.local, self.index.shards[shard].raw.basename)
+        filename = os.path.join(self.local, self.split, self.index.shards[shard].raw.basename)
         offset = (1 + idx) * 4
         with open(filename, 'rb', 0) as fp:
             fp.seek(offset)

@@ -24,9 +24,10 @@ class StandardTransform(object):
 class MDSVisionDataset(MDSDataset):
     def __init__(
         self,
-        remote: Optional[str],
         local: str,
-        shuffle: bool,
+        remote: Optional[str] = None,
+        split: Optional[str] = None,
+        shuffle: bool = True,
         transforms: Optional[Callable] = None,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
@@ -36,7 +37,8 @@ class MDSVisionDataset(MDSDataset):
         timeout: float = 60,
         batch_size: Optional[int] = None
     ) -> None:
-        super().__init__(remote, local, shuffle, prefetch, keep_zip, retry, timeout, batch_size)
+        super().__init__(local, remote, split, shuffle, prefetch, keep_zip, retry, timeout,
+                         batch_size)
 
         has_transforms = transforms is not None
         has_separate_transform = transform is not None or target_transform is not None

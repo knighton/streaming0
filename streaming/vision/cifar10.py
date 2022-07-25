@@ -6,9 +6,10 @@ from .base import MDSVisionDataset
 class CIFAR10(MDSVisionDataset):
     def __init__(
         self,
-        remote: Optional[str],
         local: str,
-        shuffle: bool,
+        remote: Optional[str] = None,
+        split: Optional[str] = None,
+        shuffle: bool = True,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         prefetch: Optional[int] = 100_000,
@@ -17,5 +18,5 @@ class CIFAR10(MDSVisionDataset):
         timeout: float = 60,
         batch_size: Optional[int] = None
     ) -> None:
-        super().__init__(remote, local, shuffle, None, transform, target_transform, prefetch,
+        super().__init__(local, remote, split, shuffle, None, transform, target_transform, prefetch,
                          keep_zip, retry, timeout, batch_size)
