@@ -4,7 +4,6 @@ from multiprocessing import Pool
 import numpy as np
 import os
 from PIL import Image
-import shutil
 from threading import RLock, Thread
 from time import sleep
 from torch.utils.data import Dataset, get_worker_info, IterableDataset
@@ -70,6 +69,45 @@ class MDSDataset(IterableDataset):
             use to validate shards.
         batch_size (Optional[int], default: None): Hint the batch_size that will be used on each
             device's DataLoader.
+
+    .. doctest::
+
+        To write the dataset:
+        >>> import numpy as np
+        >>> from PIL import Image
+        >>> from uuid import uuid4
+        >>> from streaming.base.mds.writer import MDSCreator
+        >>> dirname = 'dirname'
+        >>> fields = {
+        ...     'uuid': 'str',
+        ...     'img': 'jpeg',
+        ...     'clf': 'int'
+        ... }
+        >>> compression = 'zstd'
+        >>> hashes = 'sha1', 'xxh64'
+        >>> samples = [
+        ...     {
+        ...         'uuid': str(uuid4()),
+        ...         'img': Image.fromarray(np.random.randint(0, 256, (32, 48, 3), np.uint8)),
+        ...         'clf': np.random.randint(10),
+        ...     }
+        ...     for i in range(1000)
+        ... ]
+        >>> with MDSCreator(dirname, fields, compression, hashes) as out:
+        ...     for sample in samples:
+        ...         out.write(sample)
+
+        To read the dataset:
+        >>> from streaming.base.mds.dataset import MDSDataset
+        >>> dataset = MDSDataset('dirname')
+        >>> for sample in dataset:
+        ...     print(sample)
+
+        To read the dataset (with all optional arguments):
+        >>> from streaming.base.mds.dataset import MDSDataset
+        >>> dataset = MDSDataset(local='dirname', remote=None, split=None, shuffle=True,
+        ...                      prefetch=100_000, keep_zip=None, retry=2, timeout=60,
+        ...                      shard_hashes=None, batch_size=None)
     """
 
     def __init__(
@@ -352,7 +390,7 @@ class MDSDataset(IterableDataset):
                     with open(raw_filename, 'wb') as out:
                         out.write(data)
                     if not self.keep_zip:
-                        shutil.remove(zip_filename)
+                        os.remove(zip_filename)
                     present_shards.append(shard)
                 else:
                     missing_shards.append(shard)
@@ -421,7 +459,7 @@ class MDSDataset(IterableDataset):
                 with open(raw_filename, 'wb') as out:
                     out.write(data)
                 if not self.keep_zip:
-                    shutil.remove(zip_filename)
+                    os.remove(zip_filename)
         else:
             raw_filename = os.path.join(self.local, self.split, info.raw.basename)
             if not os.path.isfile(raw_filename):

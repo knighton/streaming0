@@ -130,7 +130,7 @@ class MDSIndex(object):
             assert is_compression(compression)
 
         hashes = hashes or []
-        assert hashes == list(sorted(hashes))
+        assert list(hashes) == list(sorted(hashes))
         for algo in hashes:
             assert is_hash(algo)
 
