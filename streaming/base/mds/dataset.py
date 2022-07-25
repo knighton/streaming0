@@ -117,7 +117,7 @@ class MDSDataset(IterableDataset):
         split: Optional[str] = None,
         shuffle: bool = True,
         prefetch: Optional[int] = 100_000,
-        keep_zip: bool = None,
+        keep_zip: Optional[bool] = None,
         retry: int = 2,
         timeout: float = 60,
         shard_hashes: Optional[List[str]] = None,

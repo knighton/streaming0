@@ -32,7 +32,7 @@ class MDSVisionDataset(MDSDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         prefetch: Optional[int] = 100_000,
-        keep_zip: bool = True,
+        keep_zip: Optional[bool] = True,
         retry: int = 2,
         timeout: float = 60,
         shard_hashes: Optional[List[str]] = None,
