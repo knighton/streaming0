@@ -62,7 +62,7 @@ def main(args: Namespace) -> None:
 
             assert s == s_dec
 
-            print(f'{algo},{size},{len(s_enc)},{t_enc:.6f},{t_dec:.6f}')
+            print(f'{algo},{size},{len(s_enc)},{t_enc:.9f},{t_dec:.9f}')
 
             if args.max_time < t_enc + t_dec:
                 break

@@ -18,11 +18,11 @@ algo2color = {
     'sha3_256': 'red',
     'sha3_384': 'red',
     'sha3_512': 'red',
-    'xxh128': 'cyan',
     'xxh32': 'cyan',
-    'xxh3_128': 'blue',
-    'xxh3_64': 'blue',
     'xxh64': 'cyan'
+    'xxh128': 'cyan',
+    'xxh3_64': 'blue',
+    'xxh3_128': 'blue',
 }
 
 
