@@ -5,7 +5,7 @@ import numpy as np
 from typing import Dict, List, Optional, Tuple
 
 
-algo2color = {
+algo2color: Dict[str, Optional[str]] = {
     'blake2b': 'purple',
     'blake2s': 'purple',
     'md5': 'green',
@@ -19,10 +19,10 @@ algo2color = {
     'sha3_384': 'red',
     'sha3_512': 'red',
     'xxh32': 'cyan',
-    'xxh64': 'cyan'
+    'xxh64': 'cyan',
     'xxh128': 'cyan',
     'xxh3_64': 'blue',
-    'xxh3_128': 'blue',
+    'xxh3_128': 'blue'
 }
 
 
@@ -50,10 +50,10 @@ def load(f: str) -> List[Tuple[str, int, float]]:
     Returns:
         List[Tuple[str, int, float]]: Tuples of (algo, size, time).
     """
-    f = open(f)
-    next(f)
+    fp = open(f)
+    next(fp)
     rr = []
-    for s in f:
+    for s in fp:
         ss = s.strip().split(',')
         algo = ss[0]
         size = int(ss[1])
@@ -105,7 +105,7 @@ def plot_hash_rates(data: List[Tuple[str, int, float]], algo2color: Dict[str, Op
     plt.clf()
 
 
-def main(args):
+def main(args) -> None:
     """Plot info about hashing.
 
     Args:
