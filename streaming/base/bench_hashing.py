@@ -56,7 +56,7 @@ def main(args: Namespace) -> None:
             h = get_hash(algo, s)
             t = time() - t0
 
-            print(f'{algo},{size},{len(h)},{t:.6f}')
+            print(f'{algo},{size},{len(h)},{t:.9f}')
 
             if args.max_time < t:
                 break
