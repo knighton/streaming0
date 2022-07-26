@@ -31,7 +31,7 @@ algo2color = {
     'bz2:8': '#018',
     'bz2:9': '#017',
     'gz': None,
-    'gz:0': '#0f0',
+    'gz:0': None,  # Level 0 = no compression.
     'gz:1': '#0e1',
     'gz:2': '#0d2',
     'gz:3': '#0c3',
