@@ -124,7 +124,17 @@ def load(f: str, min_dec_size: int) -> List[Datum]:
 
 
 def plot_encode_rates(data: List[Datum], algo2color: Dict[str, Optional[str]], dpi: int,
-                      font_size: float, line_width: float, filename: str):
+                      font_size: float, line_width: float, filename: str) -> None:
+    """Plot encode rate by size.
+
+    Args:
+        data (List[Datum]): List of data points.
+        algo2color (Dict[str, Optional[str]): Color of algo in plots, or None to omit.
+        dpi (int): DPI of plots.
+        font_size (float): Font size of plots.
+        line_width (float): Line width of plots.
+        filename (str): Plot filename.
+    """
     plt.style.use('dark_background')
     plt.rc('font', size=font_size)
 
@@ -155,7 +165,17 @@ def plot_encode_rates(data: List[Datum], algo2color: Dict[str, Optional[str]], d
 
 
 def plot_encoded_sizes(data: List[Datum], algo2color: Dict[str, Optional[str]], dpi: int,
-                       font_size: float, line_width: float, filename: str):
+                       font_size: float, line_width: float, filename: str) -> None:
+    """Plot encoded size by size.
+
+    Args:
+        data (List[Datum]): List of data points.
+        algo2color (Dict[str, Optional[str]): Color of algo in plots, or None to omit.
+        dpi (int): DPI of plots.
+        font_size (float): Font size of plots.
+        line_width (float): Line width of plots.
+        filename (str): Plot filename.
+    """
     plt.style.use('dark_background')
     plt.rc('font', size=font_size)
 
@@ -185,7 +205,17 @@ def plot_encoded_sizes(data: List[Datum], algo2color: Dict[str, Optional[str]], 
 
 
 def plot_decode_rates(data: List[Datum], algo2color: Dict[str, Optional[str]], dpi: int,
-                      font_size: float, line_width: float, filename: str):
+                      font_size: float, line_width: float, filename: str) -> None:
+    """Plot decode rate by size.
+
+    Args:
+        data (List[Datum]): List of data points.
+        algo2color (Dict[str, Optional[str]): Color of algo in plots, or None to omit.
+        dpi (int): DPI of plots.
+        font_size (float): Font size of plots.
+        line_width (float): Line width of plots.
+        filename (str): Plot filename.
+    """
     plt.style.use('dark_background')
     plt.rc('font', size=font_size)
 
@@ -215,7 +245,7 @@ def plot_decode_rates(data: List[Datum], algo2color: Dict[str, Optional[str]], d
     plt.clf()
 
 
-def main(args: Namespace):
+def main(args: Namespace) -> None:
     """Plot info about compression.
 
     Args:
